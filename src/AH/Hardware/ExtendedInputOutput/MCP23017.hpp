@@ -3,9 +3,7 @@
 #include <AH/Settings/Warnings.hpp>
 AH_DIAGNOSTIC_WERROR() // Enable errors on warnings
 
-#include "ExtendedInputOutput.hpp"
-#include "StaticSizeExtendedIOElement.hpp"
-#include <AH/Containers/BitArray.hpp>
+#include <AH/Hardware/ExtendedInputOutput/MCP230xx.hpp>
 
 BEGIN_AH_NAMESPACE
 
@@ -16,7 +14,7 @@ BEGIN_AH_NAMESPACE
  *          The type of the I²C driver to use.
  */
 template <class WireType>
-class MCP23017 : public StaticSizeExtendedIOElement<16> {
+class MCP23017 : public MCP230xx<WireType, 2> {
   public:
     /**
      * @brief   Constructor.
@@ -37,68 +35,15 @@ class MCP23017 : public StaticSizeExtendedIOElement<16> {
      *          Arduino pin.
      */
     MCP23017(WireType &wire, uint8_t addressOffset = 0,
-             pin_t interruptPin = NO_PIN);
+             pin_t interruptPin = NO_PIN)
+        : MCP230xx<WireType, 2>(wire, addressOffset, interruptPin) {};
 
-    void pinModeBuffered(pin_t pin, PinMode_t mode) override;
-    void digitalWriteBuffered(pin_t pin, PinStatus_t status) override;
-    PinStatus_t digitalReadBuffered(pin_t pin) override;
-    analog_t analogReadBuffered(pin_t pin) override;
-    void analogWriteBuffered(pin_t, analog_t) override;
-
-    void begin() override;
-
-    void updateBufferedOutputs() override;
-    void updateBufferedInputs() override;
-    /// Send the new pin modes to the chip after calling `pinModeBuffered`.
-    void updateBufferedPinModes();
-
-    /// Get the identifier of the given pin in register A.
-    /// @param  p
-    ///         Pin number in [0, 7]
-    pin_t pinA(pin_t p) { return pin(p); }
     /// Get the identifier of the given pin in register B.
     /// @param  p
     ///         Pin number in [0, 7]
-    pin_t pinB(pin_t p) { return pin(p + 8); }
-
-  private:
-    constexpr static uint8_t I2C_BASE_ADDRESS = 0x20;
-
-    WireType *wire;
-    uint8_t address;
-    pin_t interruptPin;
-
-  private:
-    bool pinModesDirty = true;
-    BitArray<16> bufferedPinModes;
-    bool pullupsDirty = true;
-    BitArray<16> bufferedPullups;
-    bool outputsDirty = true;
-    BitArray<16> bufferedOutputs;
-    BitArray<16> bufferedInputs;
-
-  private:
-    /// Check if any of the pins are configured as inputs.
-    bool hasInputs() const;
-
-    /// Write any data to the MCP23017.
-    template <size_t N>
-    void writeI2C(const uint8_t (&values)[N]);
-
-    /**
-     * @brief  Write any data to the MCP23017.
-     * 
-     * @param   addr
-     *          The address of the register to write to.
-     * @param   values
-     *          The values to write.
-     */
-    template <class... Args>
-    void writeI2C(uint8_t addr, Args... values);
+    pin_t pinB(pin_t p) { return StaticSizeExtendedIOElement<16>::pin(p + 8); }
 };
 
 END_AH_NAMESPACE
-
-#include "MCP23017.ipp"
 
 AH_DIAGNOSTIC_POP()
