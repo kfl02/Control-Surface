@@ -15,15 +15,46 @@ AH_DIAGNOSTIC_WERROR() // Enable errors on warnings
 
 BEGIN_AH_NAMESPACE
 
+/// Helpers to determine the value of a classes static constexpr member
+/// called analogResolution. If one is present, it is used as the analog
+/// bit width, otherwise the machine's default ADC_BITS is used.
+template<typename T>
+class has_analog_resolution {
+    using yes = char;
+    using no = struct { char x[2]; };
+
+    template<typename C> static yes test( decltype(&C::analogResolution));
+    template<typename C> static no test(...);
+
+public:
+    const static bool value = sizeof(test<T>(0)) == sizeof(yes);
+};
+
+template<typename T>
+typename std::enable_if<has_analog_resolution<T>::value, uint8_t>::type
+constexpr analogResolution() {
+    return T::analogResolution;
+}
+
+template<typename T>
+typename std::enable_if<!has_analog_resolution<T>::value, uint8_t>::type
+constexpr analogResolution() {
+    return ADC_BITS;
+}
+
 /**
  * @brief   Helper to determine how many of the remaining bits of the filter 
  *          data types can be used to achieve higher precision.
  */
-template <uint8_t FilterShiftFactor, class FilterType, class AnalogType>
+template <uint8_t FilterShiftFactor,
+          class FilterType,
+          class AnalogType,
+          class ADCType = void>
 struct MaximumFilteredAnalogIncRes {
     constexpr static uint8_t value =
-        min(sizeof(FilterType) * CHAR_BIT - ADC_BITS - FilterShiftFactor,
-            sizeof(AnalogType) * CHAR_BIT - ADC_BITS);
+        min(sizeof(FilterType) * CHAR_BIT
+                - analogResolution<ADCType>() - FilterShiftFactor,
+            sizeof(AnalogType) * CHAR_BIT - analogResolution<ADCType>());
 };
 
 /**
@@ -33,9 +64,11 @@ struct MaximumFilteredAnalogIncRes {
  */
 template <class MappingFunction, uint8_t Precision = 10,
           uint8_t FilterShiftFactor = ANALOG_FILTER_SHIFT_FACTOR,
-          class FilterType = ANALOG_FILTER_TYPE, class AnalogType = analog_t,
+          class FilterType = ANALOG_FILTER_TYPE,
+          class AnalogType = analog_t,
+          class ADCType = void,
           uint8_t IncRes = MaximumFilteredAnalogIncRes<
-              FilterShiftFactor, FilterType, AnalogType>::value>
+              FilterShiftFactor, FilterType, AnalogType, ADCType>::value>
 class GenericFilteredAnalog {
   public:
     /**
@@ -50,8 +83,11 @@ class GenericFilteredAnalog {
      */
     GenericFilteredAnalog(pin_t analogPin, MappingFunction mapFn,
                           AnalogType initial = 0)
-        : analogPin(analogPin), mapFn(std::forward<MappingFunction>(mapFn)),
-          filter(increaseBitDepth<ADC_BITS + IncRes, Precision, AnalogType,
+        : analogPin(analogPin),
+          mapFn(std::forward<MappingFunction>(mapFn)),
+          filter(increaseBitDepth<analogResolution<ADCType>() + IncRes,
+                                  Precision,
+                                  AnalogType,
                                   AnalogType>(initial)) {}
 
     /**
@@ -64,8 +100,11 @@ class GenericFilteredAnalog {
      *          instead of to zero? This would require adding a `begin` method.
      */
     void reset(AnalogType value = 0) {
-        AnalogType widevalue = increaseBitDepth<ADC_BITS + IncRes, Precision,
-                                                AnalogType, AnalogType>(value);
+        AnalogType widevalue =
+            increaseBitDepth<analogResolution<ADCType>() + IncRes,
+                             Precision,
+                             AnalogType,
+                             AnalogType>(value);
         filter.reset(widevalue);
         hysteresis.setValue(widevalue);
     }
@@ -159,14 +198,15 @@ class GenericFilteredAnalog {
         if (value > 1023)
             value = 1023;
 #endif
-        return increaseBitDepth<ADC_BITS + IncRes, ADC_BITS, AnalogType>(value);
+        return increaseBitDepth<analogResolution<ADCType>() + IncRes,
+                                analogResolution<ADCType>(), AnalogType>(value);
     }
 
     /**
      * @brief   Get the maximum value that can be returned from @ref getRawValue.
      */
     constexpr static AnalogType getMaxRawValue() {
-        return (1ul << (ADC_BITS + IncRes)) - 1ul;
+        return (1ul << (analogResolution<ADCType>() + IncRes)) - 1ul;
     }
 
     /**
@@ -178,7 +218,7 @@ class GenericFilteredAnalog {
      */
     static void setupADC() {
 #if HAS_ANALOG_READ_RESOLUTION
-        analogReadResolution(ADC_BITS);
+        analogReadResolution(analogResolution<ADCType>());
 #endif
     }
 
@@ -211,19 +251,21 @@ class GenericFilteredAnalog {
     using EMA_t = EMA<FilterShiftFactor, AnalogType, FilterType>;
 
     static_assert(
-        ADC_BITS + IncRes + FilterShiftFactor <= sizeof(FilterType) * CHAR_BIT,
+        analogResolution<ADCType>() + IncRes + FilterShiftFactor
+            <= sizeof(FilterType) * CHAR_BIT,
         "Error: FilterType is not wide enough to hold the maximum value");
     static_assert(
-        ADC_BITS + IncRes <= sizeof(AnalogType) * CHAR_BIT,
+        analogResolution<ADCType>() + IncRes <= sizeof(AnalogType) * CHAR_BIT,
         "Error: AnalogType is not wide enough to hold the maximum value");
     static_assert(
-        Precision <= ADC_BITS + IncRes,
+        Precision <= analogResolution<ADCType>() + IncRes,
         "Error: Precision is larger than the increased ADC precision");
     static_assert(EMA_t::supports_range(AnalogType(0), getMaxRawValue()),
                   "Error: EMA filter type doesn't support full ADC range");
 
     EMA_t filter;
-    Hysteresis<ADC_BITS + IncRes - Precision, AnalogType, AnalogType>
+    Hysteresis<analogResolution<ADCType>() + IncRes - Precision,
+               AnalogType, AnalogType>
         hysteresis;
 };
 
@@ -250,6 +292,11 @@ class GenericFilteredAnalog {
  *          Should be at least 
  *          @f$ \text{ADC_BITS} + \text{IncRes} + 
  *          \text{FilterShiftFactor} @f$ bits wide.
+ * @tparam  ADCType
+ *          An external analog to digital converter device to use, like MCP3008.
+ *          The ADC class shoulld define a static constexpr member called
+ *          "analogResolution" which specifies the number of bits used in
+ *          conversion. Otherwise the machine's default ADC_BITS is assumed.
  * @tparam  AnalogType
  *          The type to use for the analog values.  
  *          Should be at least @f$ \text{ADC_BITS} + \text{IncRes} @f$ 
@@ -262,13 +309,15 @@ class GenericFilteredAnalog {
  */
 template <uint8_t Precision = 10,
           uint8_t FilterShiftFactor = ANALOG_FILTER_SHIFT_FACTOR,
-          class FilterType = ANALOG_FILTER_TYPE, class AnalogType = analog_t,
+          class FilterType = ANALOG_FILTER_TYPE,
+          class ADCType = void,
+          class AnalogType = analog_t,
           uint8_t IncRes = MaximumFilteredAnalogIncRes<
               FilterShiftFactor, FilterType, AnalogType>::value>
 class FilteredAnalog
     : public GenericFilteredAnalog<AnalogType (*)(AnalogType), Precision,
                                    FilterShiftFactor, FilterType, AnalogType,
-                                   IncRes> {
+                                   ADCType, IncRes> {
   public:
     /**
      * @brief   Construct a new FilteredAnalog object.
@@ -281,7 +330,7 @@ class FilteredAnalog
     FilteredAnalog(pin_t analogPin, AnalogType initial = 0)
         : GenericFilteredAnalog<AnalogType (*)(AnalogType), Precision,
                                 FilterShiftFactor, FilterType, AnalogType,
-                                IncRes>(analogPin, nullptr, initial) {}
+                                ADCType, IncRes>(analogPin, nullptr, initial) {}
 
     /**
      * @brief   Construct a new FilteredAnalog object.
