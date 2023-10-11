@@ -16,29 +16,29 @@ AH_DIAGNOSTIC_POP()
 BEGIN_AH_NAMESPACE
 
 /**
- * @brief   Class for reading 8 rotary encoders using a MCP23017 I²C port 
+ * @brief   Class for reading 8 rotary encoders using a MCP23008 I²C port
  *          expander.
- * 
+ *
  * Encoders are indexed by a number from 0 to 7. Encoder #0 is connected to pins
  * GPA0 and GPA1, Encoder #1 is connected to pins GPA2 and GPA3, ..., Encoder #7
  * is connected to pins GPB6 and GPB7.
- * 
+ *
  * @tparam  WireType
  *          The type of the `Wire` I²C driver to use.
  * @tparam  EncoderPositionType
  *          The type used for saving the encoder positions. `int32_t` is the
  *          default because this matches the Encoder library. You can use small
- *          unsigned types such as `uint8_t` or `uint16_t` if you're just 
+ *          unsigned types such as `uint8_t` or `uint16_t` if you're just
  *          interrested in the deltas.
  * @tparam  InterruptSafe
- *          Make the `update` method safe to use inside of an interrupt. 
+ *          Make the `update` method safe to use inside of an interrupt.
  *          It makes the necessary variables `volatile` and disables interrupts
  *          while reading the positions from the main program.
  */
 template <class WireType, class EncoderPositionType = int32_t,
           bool InterruptSafe = false>
-class MCP23017Encoders : public MCP23xxxEncoders<WireType,
-                                                 2,
+class MCP23008Encoders : public MCP23xxxEncoders<WireType,
+                                                 1,
                                                  EncoderPositionType,
                                                  InterruptSafe> {
   public:
@@ -60,12 +60,12 @@ class MCP23017Encoders : public MCP23xxxEncoders<WireType,
      *          connect the interrupt pins of multiple MCP23xxxs to a single
      *          Arduino pin.
      */
-    MCP23017Encoders(WireType &wire, uint8_t addr_offset = 0,
+    MCP23008Encoders(WireType &wire, uint8_t addr_offset = 0,
                      pin_t interrupt_pin = NO_PIN)
-        : MCP23xxxEncoders<WireType, 2, EncoderPositionType, InterruptSafe>(
+        : MCP23xxxEncoders<WireType, 1, EncoderPositionType, InterruptSafe>(
               wire, addr_offset, interrupt_pin
           ) {};
-};
+}};
 
 END_AH_NAMESPACE
 
