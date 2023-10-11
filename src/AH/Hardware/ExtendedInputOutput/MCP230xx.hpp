@@ -14,6 +14,9 @@ BEGIN_AH_NAMESPACE
  *
  * @tparam  WireType
  *          The type of the I²C driver to use.
+ *
+ * @tparam  N
+ *          The number of pin banks (1 = MCP23008, 2 = MCP230017)
  */
 template <class WireType, uint16_t N>
 class MCP230xx : public StaticSizeExtendedIOElement<N * 8> {

@@ -40,7 +40,7 @@ enum MCP230xxRegAddr {
 
 template <class WireType, uint16_t N>
 MCP230xx<WireType, N>::MCP230xx(WireType &wire, uint8_t addressOffset,
-                             pin_t interruptPin)
+                                pin_t interruptPin)
     : wire(&wire), address(I2C_BASE_ADDRESS | addressOffset),
       interruptPin(interruptPin) {
     // Input mode by default
@@ -115,8 +115,8 @@ void MCP230xx<WireType, N>::begin() {
         //                            (addresses are segregated)
     }
     // on MCP23008, IOCON is always at register 0x05
-    // on MCP23017, IOCON is guaranteed to be at 0x05 with the previous write to 0x0B,
-    // so now switch to BANK = 0 again
+    // on MCP23017, IOCON is guaranteed to be at 0x05 with the previous write
+    // to 0x0B, so now switch to BANK = 0 again
     writeI2C(IOCON, //
              0b01100100);
     //         │││││││└─ Unimplemented
