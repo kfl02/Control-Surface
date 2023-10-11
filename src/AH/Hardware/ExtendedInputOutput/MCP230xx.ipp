@@ -70,7 +70,8 @@ void MCP230xx<WireType, N>::pinModeBuffered(pin_t pin, PinMode_t mode) {
 }
 
 template <class WireType, uint16_t N>
-void MCP230xx<WireType, N>::digitalWriteBuffered(pin_t pin, PinStatus_t status) {
+void MCP230xx<WireType, N>::digitalWriteBuffered(pin_t pin,
+                                                 PinStatus_t status) {
     bool boolstate = status == HIGH;
     outputsDirty |= bufferedOutputs.get(pin) != boolstate;
     bufferedOutputs.set(pin, boolstate);
@@ -103,12 +104,15 @@ void MCP230xx<WireType, N>::begin() {
                  0b11100100);
         //         │││││││└─ Unimplemented
         //         ││││││└── INTPOL = Active-low
-        //         │││││└─── ODR    = Open-drain output (overrides the INTPOL bit)
+        //         │││││└─── ODR    = Open-drain output
+        //         │││││              (overrides the INTPOL bit)
         //         ││││└──── HAEN   = Disables the MCP23S17 address pins
         //         │││└───── DISSLW = Slew rate enabled
-        //         ││└────── SEQOP  = Sequential operation disabled, address pointer does not increment
+        //         ││└────── SEQOP  = Sequential operation disabled,
+        //         ││                 address pointer does not increment
         //         │└─────── MIRROR = The INT pins are internally connected
-        //         └──────── BANK   = The registers are in different banks (addresses are segregated)
+        //         └──────── BANK   = The registers are in different banks
+        //                            (addresses are segregated)
     }
     // on MCP23008, IOCON is always at register 0x05
     // on MCP23017, IOCON is guaranteed to be at 0x05 with the previous write to 0x0B,
@@ -120,9 +124,11 @@ void MCP230xx<WireType, N>::begin() {
     //         │││││└─── ODR    = Open-drain output (overrides the INTPOL bit)
     //         ││││└──── HAEN   = Disables the MCP23S17 address pins
     //         │││└───── DISSLW = Slew rate enabled
-    //         ││└────── SEQOP  = Sequential operation disabled, address pointer does not increment
+    //         ││└────── SEQOP  = Sequential operation disabled,
+    //         ││                 address pointer does not increment
     //         │└─────── MIRROR = The INT pins are internally connected
-    //         └──────── BANK   = The registers are in the same bank (addresses are sequential)
+    //         └──────── BANK   = The registers are in the same bank
+    //                            (addresses are sequential)
 }
 
 template <class WireType, uint16_t N>
@@ -193,7 +199,8 @@ bool MCP230xx<WireType, N>::hasInputs() const {
     if (N == 1) {
         return bufferedPinModes.getByte(0) != 0;
     } else {
-        return bufferedPinModes.getByte(0) != 0 || bufferedPinModes.getByte(1) != 0;
+        return bufferedPinModes.getByte(0) != 0
+               || bufferedPinModes.getByte(1) != 0;
     }
 }
 

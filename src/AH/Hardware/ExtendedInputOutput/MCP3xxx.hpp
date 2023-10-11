@@ -28,14 +28,17 @@ BEGIN_AH_NAMESPACE
 *
  * @ingroup AH_ExtIO
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 1, uint8_t R = 10, size_t S = 2>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 1, uint8_t R = 10, size_t S = 2>
 class MCP3xxx : public StaticSizeExtendedIOElement<N> {
-    static_assert(N != 1 || N != 2 || N != 4 || N != 8, "invalid number of pins");
+    static_assert(N != 1 || N != 2 || N != 4 || N != 8,
+                  "invalid number of pins");
     static_assert(R != 10 || R != 12, "invalid resolution");
 
   protected:
     /**
-     * @brief   Create a new MCP3xxx ADC object. Can only be called from subclasses.
+     * @brief   Create a new MCP3xxx ADC object.
+     *          Can only be called from subclasses.
      *
      * @param   spi
      *          The SPI interface to use.
@@ -200,7 +203,8 @@ class MCP3xxx : public StaticSizeExtendedIOElement<N> {
         uint8_t request[S];
         uint8_t result[S];
 
-        buildRequest(pin - MCP3xxx<SPIDriver, N, R, S>::getStart(), single, request);
+        buildRequest(pin - MCP3xxx<SPIDriver, N, R, S>::getStart(),
+                     single, request);
 
         for(size_t i = 0; i < S; i++) {
             result[i] = spi.transfer(request[i]);
@@ -248,7 +252,10 @@ class MCP3xxx : public StaticSizeExtendedIOElement<N> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 1, uint8_t R = 10, size_t S = 2>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 1,
+          uint8_t R = 10,
+          size_t S = 2>
 class MCP3001 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3001(SPIDriver spi, pin_t latchPin = SS)
@@ -271,7 +278,10 @@ class MCP3001 : public MCP3xxx<SPIDriver, N, R, S> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 2, uint8_t R = 10, size_t S = 2>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 2,
+          uint8_t R = 10,
+          size_t S = 2>
 class MCP3002 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3002(SPIDriver spi, pin_t latchPin = SS)
@@ -298,7 +308,10 @@ class MCP3002 : public MCP3xxx<SPIDriver, N, R, S> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 4, uint8_t R = 10, size_t S = 3>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 4,
+          uint8_t R = 10,
+          size_t S = 3>
 class MCP3004 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3004(SPIDriver spi, pin_t latchPin = SS)
@@ -325,7 +338,10 @@ class MCP3004 : public MCP3xxx<SPIDriver, N, R, S> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 8, uint8_t R = 10, size_t S = 3>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 8,
+          uint8_t R = 10,
+          size_t S = 3>
 class MCP3008 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3008(SPIDriver spi, pin_t latchPin = SS)
@@ -352,7 +368,10 @@ class MCP3008 : public MCP3xxx<SPIDriver, N, R, S> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 1, uint8_t R = 12, size_t S = 2>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 1,
+          uint8_t R = 12,
+          size_t S = 2>
 class MCP3201 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3201(SPIDriver spi, pin_t latchPin = SS)
@@ -375,7 +394,10 @@ class MCP3201 : public MCP3xxx<SPIDriver, N, R, S> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 2, uint8_t R = 12, size_t S = 3>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 2,
+          uint8_t R = 12,
+          size_t S = 3>
 class MCP3202 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3202(SPIDriver spi, pin_t latchPin = SS)
@@ -402,7 +424,10 @@ class MCP3202 : public MCP3xxx<SPIDriver, N, R, S> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 4, uint8_t R = 12, size_t S = 3>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 4,
+          uint8_t R = 12,
+          size_t S = 3>
 class MCP3204 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3204(SPIDriver spi, pin_t latchPin = SS)
@@ -432,7 +457,10 @@ class MCP3204 : public MCP3xxx<SPIDriver, N, R, S> {
  * @tparam  SPIDriver
  *          The type of the SPI driver to use.
  */
-template <class SPIDriver = decltype(SPI) &, uint8_t N = 8, uint8_t R = 12, size_t S = 3>
+template <class SPIDriver = decltype(SPI) &,
+          uint8_t N = 8,
+          uint8_t R = 12,
+          size_t S = 3>
 class MCP3208 : public MCP3xxx<SPIDriver, N, R, S> {
   public:
     MCP3208(SPIDriver spi, pin_t latchPin = SS)
