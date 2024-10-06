@@ -65,7 +65,7 @@ class MCP23008Encoders : public MCP23xxxEncoders<WireType,
         : MCP23xxxEncoders<WireType, 1, EncoderPositionType, InterruptSafe>(
               wire, addr_offset, interrupt_pin
           ) {};
-}};
+};
 
 END_AH_NAMESPACE
 
